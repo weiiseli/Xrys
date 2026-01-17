@@ -1,0 +1,39 @@
+name: Build Xray-core for mipsle
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Build Xray (mipsle softfloat)
+      run: |
+        export GOOS=linux
+        export GOARCH=mipsle
+        export GOMIPS=softfloat
+        export CGO_ENABLED=0
+        go build -trimpath -ldflags "-s -w" -o xray ./main
+
+    - name: Compress with UPX
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y upx
+        upx --lzma xray
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: xray-mipsle
+        path: xray
